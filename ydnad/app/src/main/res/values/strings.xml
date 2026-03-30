@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ydnad</string>
+    <string name="nav_transactions">Transactions</string>
+    <string name="nav_reports">Reports</string>
+    <string name="add_transaction">Add Transaction</string>
+    <string name="no_transactions">No transactions yet.\nTap + to add one.</string>
+    <string name="no_data">No data available.</string>
+    <string name="date">Date</string>
+    <string name="category">Category</string>
+    <string name="sub_category">Sub-Category</string>
+    <string name="memo">Memo</string>
+    <string name="amount">Amount</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="monthly_spending">Monthly Spending</string>
+    <string name="spending_by_category">Spending by Category</string>
+</resources>
