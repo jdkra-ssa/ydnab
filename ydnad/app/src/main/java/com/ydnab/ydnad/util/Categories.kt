@@ -61,19 +61,18 @@ object Categories {
         val items = (0 until bodyArray.length()).map { bodyArray.getJSONObject(it) }
         val sorted = items.sortedBy { it.optString("SK") }
 
-        val map = LinkedHashMap<String, List<String>>()
+        val map = LinkedHashMap<String, MutableList<String>>()
         for (item in sorted) {
             val sk = item.optString("SK")
             if (sk.isEmpty()) continue
-            val subcategories = if (item.has("subcategories")) {
-                val arr = item.getJSONArray("subcategories")
-                (0 until arr.length()).map { arr.getString(it) }
-            } else {
-                fallbackMap[sk] ?: emptyList()
-            }
-            map[sk] = subcategories
+            val colonIdx = sk.indexOf(':')
+            if (colonIdx < 0) continue
+            val category = sk.substring(0, colonIdx).trim()
+            val subCategory = sk.substring(colonIdx + 1).trim()
+            if (category.isEmpty() || subCategory.isEmpty()) continue
+            map.getOrPut(category) { mutableListOf() }.add(subCategory)
         }
 
-        return map
+        return LinkedHashMap<String, List<String>>(map)
     }
 }
