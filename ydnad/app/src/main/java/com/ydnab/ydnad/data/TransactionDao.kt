@@ -24,6 +24,12 @@ interface TransactionDao {
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteById(id: Long)
 
+    @Query("DELETE FROM transactions")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(transactions: List<Transaction>)
+
     @Query("""
         SELECT strftime('%Y-%m', date) as month, SUM(amount) as total
         FROM transactions
