@@ -31,7 +31,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
     val syncError: StateFlow<String?> = _syncError.asStateFlow()
 
     fun syncFromApi(
-        startDate: LocalDate = LocalDate.now().withDayOfMonth(1),
+        startDate: LocalDate = LocalDate.now().withDayOfYear(1),
         endDate: LocalDate = LocalDate.now().plusMonths(1)
     ) = viewModelScope.launch {
         _isSyncing.value = true
