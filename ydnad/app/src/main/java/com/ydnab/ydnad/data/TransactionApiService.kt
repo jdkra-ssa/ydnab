@@ -1,6 +1,7 @@
 package com.ydnab.ydnad.data
 
 import com.ydnab.ydnad.BuildConfig
+import com.ydnab.ydnad.util.Categories
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -8,6 +9,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.LocalDate
+import java.util.UUID
 
 object TransactionApiService {
 
@@ -78,6 +80,62 @@ object TransactionApiService {
                 amount = amount
             )
         }
+    }
+
+    /**
+     * Creates a new entry via POST. Returns the SK ("date#guid") on success.
+     * Throws [IllegalArgumentException] for invalid category/subcategory,
+     * or [IllegalStateException] on HTTP error.
+     */
+    suspend fun createEntry(
+        date: LocalDate,
+        category: String,
+        subCategory: String,
+        memo: String,
+        inflow: Double = 0.0,
+        outflow: Double = 0.0
+    ): String = withContext(Dispatchers.IO) {
+        val validCategories = Categories.names
+        require(category.trim() in validCategories) {
+            "Invalid category '$category'. Valid: $validCategories"
+        }
+
+        val validSubCategories = Categories.subCategories(category.trim())
+        require(subCategory.trim() in validSubCategories) {
+            "Invalid sub_category '$subCategory' for category '$category'. Valid: $validSubCategories"
+        }
+
+        val guid = UUID.randomUUID()
+        val sk = "$date#$guid"
+
+        val payload = JSONObject().apply {
+            put("PK", "Entry")
+            put("SK", sk)
+            put("Category", category)
+            put("SubCategory", subCategory)
+            put("Memo", memo)
+            put("Inflow", inflow)
+            put("Outflow", outflow)
+        }
+
+        val url = URL("https://6uq5hs41sc.execute-api.us-west-2.amazonaws.com/Prod")
+        val connection = (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            setRequestProperty("x-api-key", BuildConfig.API_KEY)
+            setRequestProperty("Content-Type", "application/json")
+            doOutput = true
+            connectTimeout = 10_000
+            readTimeout = 10_000
+        }
+
+        try {
+            connection.outputStream.bufferedWriter().use { it.write(payload.toString()) }
+            check(connection.responseCode in 200..299) { "HTTP ${connection.responseCode}" }
+        } finally {
+            connection.disconnect()
+        }
+
+        sk
     }
 
     private fun Double.round2(): Double = Math.round(this * 100) / 100.0

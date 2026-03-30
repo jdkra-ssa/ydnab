@@ -1,6 +1,7 @@
 package com.ydnab.ydnad.ui.transactions
 
 import android.app.DatePickerDialog
+import android.widget.Toast
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -149,12 +150,20 @@ class AddEditTransactionFragment : Fragment() {
         )
 
         if (editingTransaction == null) {
-            viewModel.insert(transaction)
+            binding.btnSave.isEnabled = false
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    viewModel.createEntry(transaction)
+                    findNavController().navigateUp()
+                } catch (e: Exception) {
+                    binding.btnSave.isEnabled = true
+                    Toast.makeText(requireContext(), e.message ?: "Failed to save", Toast.LENGTH_LONG).show()
+                }
+            }
         } else {
             viewModel.update(transaction)
+            findNavController().navigateUp()
         }
-
-        findNavController().navigateUp()
     }
 
     override fun onDestroyView() {

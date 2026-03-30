@@ -32,7 +32,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun syncFromApi(
         startDate: LocalDate = LocalDate.now().withDayOfMonth(1),
-        endDate: LocalDate = LocalDate.now()
+        endDate: LocalDate = LocalDate.now().plusMonths(1)
     ) = viewModelScope.launch {
         _isSyncing.value = true
         _syncError.value = null
@@ -60,4 +60,20 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     suspend fun getById(id: Long): Transaction? = repository.getById(id)
+
+    /** Calls the remote API to create the entry, then saves it locally. Throws on failure. */
+    suspend fun createEntry(transaction: Transaction) {
+        val isIncome = transaction.category.equals("Income", ignoreCase = true)
+        val inflow = if (isIncome) transaction.amount else 0.0
+        val outflow = if (isIncome) 0.0 else transaction.amount
+        TransactionApiService.createEntry(
+            date = transaction.date,
+            category = transaction.category,
+            subCategory = transaction.subCategory,
+            memo = transaction.memo,
+            inflow = inflow,
+            outflow = outflow
+        )
+        repository.insert(transaction)
+    }
 }
