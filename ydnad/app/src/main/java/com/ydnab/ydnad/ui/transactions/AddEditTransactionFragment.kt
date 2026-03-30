@@ -120,7 +120,7 @@ class AddEditTransactionFragment : Fragment() {
             }
 
             binding.etMemo.setText(transaction.memo)
-            binding.etAmount.setText(transaction.amount.toString())
+            binding.etAmount.setText(kotlin.math.abs(transaction.amount).toString())
         }
     }
 
