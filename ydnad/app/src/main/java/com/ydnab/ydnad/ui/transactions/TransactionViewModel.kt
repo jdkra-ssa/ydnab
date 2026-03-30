@@ -61,6 +61,23 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     suspend fun getById(id: Long): Transaction? = repository.getById(id)
 
+    /** Calls the remote API to update an existing entry, then saves it locally. Throws on failure. */
+    suspend fun updateEntry(transaction: Transaction) {
+        val isIncome = transaction.category.equals("Income", ignoreCase = true)
+        val inflow = if (isIncome) transaction.amount else 0.0
+        val outflow = if (isIncome) 0.0 else transaction.amount
+        TransactionApiService.updateEntry(
+            id = transaction.remoteId,
+            date = transaction.date,
+            category = transaction.category,
+            subCategory = transaction.subCategory,
+            memo = transaction.memo,
+            inflow = inflow,
+            outflow = outflow
+        )
+        repository.update(transaction)
+    }
+
     /** Calls the remote API to create the entry, then saves it locally. Throws on failure. */
     suspend fun createEntry(transaction: Transaction) {
         val isIncome = transaction.category.equals("Income", ignoreCase = true)

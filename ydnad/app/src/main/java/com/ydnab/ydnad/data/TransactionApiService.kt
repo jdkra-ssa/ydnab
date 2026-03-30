@@ -63,6 +63,7 @@ object TransactionApiService {
         page.map { item ->
             val sk = item.optString("SK")
             val datePart = sk.substringBefore("#")
+            val remoteId = sk.substringAfter("#")
 
             val category = item.optString("Category").replace(",", "")
             val subCategory = item.optString("SubCategory").replace(",", "")
@@ -77,7 +78,8 @@ object TransactionApiService {
                 category = category,
                 subCategory = subCategory,
                 memo = memo,
-                amount = amount
+                amount = amount,
+                remoteId = remoteId
             )
         }
     }
@@ -107,6 +109,62 @@ object TransactionApiService {
 
         val guid = UUID.randomUUID()
         val sk = "$date#$guid"
+
+        val payload = JSONObject().apply {
+            put("PK", "Entry")
+            put("SK", sk)
+            put("Category", category)
+            put("SubCategory", subCategory)
+            put("Memo", memo)
+            put("Inflow", inflow)
+            put("Outflow", outflow)
+        }
+
+        val url = URL("https://6uq5hs41sc.execute-api.us-west-2.amazonaws.com/Prod")
+        val connection = (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            setRequestProperty("x-api-key", BuildConfig.API_KEY)
+            setRequestProperty("Content-Type", "application/json")
+            doOutput = true
+            connectTimeout = 10_000
+            readTimeout = 10_000
+        }
+
+        try {
+            connection.outputStream.bufferedWriter().use { it.write(payload.toString()) }
+            check(connection.responseCode in 200..299) { "HTTP ${connection.responseCode}" }
+        } finally {
+            connection.disconnect()
+        }
+
+        sk
+    }
+
+    /**
+     * Updates an existing entry via POST. Returns the SK ("date#guid") on success.
+     * Throws [IllegalArgumentException] for invalid category/subcategory,
+     * or [IllegalStateException] on HTTP error.
+     */
+    suspend fun updateEntry(
+        id: String,
+        date: LocalDate,
+        category: String,
+        subCategory: String,
+        memo: String,
+        inflow: Double = 0.0,
+        outflow: Double = 0.0
+    ): String = withContext(Dispatchers.IO) {
+        val validCategories = Categories.names
+        require(category.trim() in validCategories) {
+            "Invalid category '$category'. Valid: $validCategories"
+        }
+
+        val validSubCategories = Categories.subCategories(category.trim())
+        require(subCategory.trim() in validSubCategories) {
+            "Invalid sub_category '$subCategory' for category '$category'. Valid: $validSubCategories"
+        }
+
+        val sk = "$date#$id"
 
         val payload = JSONObject().apply {
             put("PK", "Entry")

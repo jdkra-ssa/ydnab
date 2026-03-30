@@ -12,5 +12,6 @@ data class Transaction(
     val category: String,
     val subCategory: String,
     val memo: String,
-    val amount: Double
+    val amount: Double,
+    val remoteId: String = ""
 )

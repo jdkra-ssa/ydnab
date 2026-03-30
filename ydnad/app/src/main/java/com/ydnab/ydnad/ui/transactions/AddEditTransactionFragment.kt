@@ -146,7 +146,8 @@ class AddEditTransactionFragment : Fragment() {
             category = category,
             subCategory = subCategory,
             memo = memo,
-            amount = amount
+            amount = amount,
+            remoteId = editingTransaction?.remoteId ?: ""
         )
 
         if (editingTransaction == null) {
@@ -161,8 +162,16 @@ class AddEditTransactionFragment : Fragment() {
                 }
             }
         } else {
-            viewModel.update(transaction)
-            findNavController().navigateUp()
+            binding.btnSave.isEnabled = false
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    viewModel.updateEntry(transaction)
+                    findNavController().navigateUp()
+                } catch (e: Exception) {
+                    binding.btnSave.isEnabled = true
+                    Toast.makeText(requireContext(), e.message ?: "Failed to save", Toast.LENGTH_LONG).show()
+                }
+            }
         }
     }
 
